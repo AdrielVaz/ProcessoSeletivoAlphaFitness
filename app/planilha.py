@@ -7,7 +7,7 @@ CORS(app)  # Habilita CORS para todas as rotas
 # Servir o frontend
 @app.route("/")
 def serve_frontend():
-    return send_file('index.html')
+    return send_file('Template/index.html')
 
 # Servir arquivos CSS
 @app.route("/styles/<path:filename>")
