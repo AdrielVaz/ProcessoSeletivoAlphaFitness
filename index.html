@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles/index.css">
+    <link rel="stylesheet" href="styles/card.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Processo Seletivo Rede Alpha Fitness</title>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo-container">
+            <h2>Sistema Alpha Fitness</h2>
+        </div>
+        <div class="icon-container">
+            <div class="icon">
+                <i class="fas fa-dumbbell"></i>
+            </div>
+        </div>
+    </header>
+    <div class="tabela-container">
+        <h1>Dados do Excel</h1>
+        <!-- Filtro geral -->
+        <div class="filtro-container">
+            <div class="filtro-item">
+                <label for="filtro-nome">Filtrar por Nome:</label>
+                <input type="text" id="filtro" placeholder="Digite o nome para filtrar">
+            </div>
+
+            <div class="filtro-item">
+                <label for="filtro-email">Filtrar por Email:</label>
+                <input type="text" id="filtro-email" placeholder="Digite Email para filtrar">
+            </div>
+
+            <div class="filtro-item">
+                <label for="cpf">Filtrar por CPF:</label>
+                <input type="text" id="filtro-cpf" placeholder="000.000.000-00" maxlength="14">
+            </div>
+            <div class="filtro-item">
+                <label for="ordenar">Ordenar por:</label>
+                <select id="ordenar">
+                    <option value="mais-recentes">Mais recentes</option>
+                    <option value="mais-antigos">Mais antigos</option>
+                    <option value="a-z">A → Z</option>
+                    <option value="z-a">Z → A</option>
+                </select>
+            </div>
+            <div class="filtro-item">
+                <label for="filtro-numero">Filtrar por Número:</label>
+                <input type="number" id="filtro-numero" placeholder="Digite Número para filtrar">
+            </div>
+
+            <div class="filtro-item">
+                <label for="filtro-id">Filtrar por ID:</label>
+                <input type="text" id="filtro-id" placeholder="Digite ID para filtrar">
+            </div>
+        </div>
+        <div id="loading" style="display: none; text-align: center; margin: 20px 0;">
+            <i id="spinner" class="fas fa-spinner fa-spin" style="font-size: 2em; color: #ff6b00;"></i>
+            <div style="margin-top: 10px;">Carregando...</div>
+        </div>
+        <div id="error" style="display: none; color: red;"></div>
+        <div class="tabela-rolavel">
+            <table id="tabela">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Número</th>
+                        <th>Email</th>
+                        <th>CPF</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- dados -->
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+    <!-- Card de Estatísticas -->
+    <div id="statsCard" class="stats-card" style="display: none;">
+        <div class="stats-title">
+            <i class="fas fa-database"></i>
+            TOTAL DE REGISTROS
+        </div>
+        <div class="stats-count" id="totalCount">0</div>
+        <div class="stats-info">
+            <span>Filtrados: <span id="filteredCount">0</span></span>
+
+        </div>
+        <div class="stats-update" id="lastUpdate">
+            Atualizado: <span id="updateTime">--:--:--</span>
+        </div>
+    </div>
+    <script>
+        const tabela = document.getElementById("tabela");
+        const filtroInput = document.getElementById("filtro");
+        const filtroEmail = document.getElementById("filtro-email");
+        const filtroCpf = document.getElementById("filtro-cpf");
+        const filtroNumero = document.getElementById("filtro-numero");
+        const filtroId = document.getElementById("filtro-id");
+        const ordenarSelect = document.getElementById("ordenar");
+
+        // Elementos do card de estatísticas
+        const statsCard = document.getElementById("statsCard");
+        const totalCount = document.getElementById("totalCount");
+        const filteredCount = document.getElementById("filteredCount");
+        const visibleCount = document.getElementById("visibleCount");
+        const updateTime = document.getElementById("updateTime");
+
+        let dadosOriginais = [];
+        let dadosFiltradosAtuais = [];
+
+        function formatarDataHora(data) {
+            return new Date(data).toLocaleString('pt-BR');
+        }
+
+        function atualizarEstatisticas() {
+            const total = dadosOriginais.length;
+            const filtrados = dadosFiltradosAtuais.length;
+
+
+            totalCount.textContent = total;
+            filteredCount.textContent = filtrados;
+
+            updateTime.textContent = new Date().toLocaleTimeString('pt-BR');
+
+            // Mostrar o card quando tiver dados
+            if (total > 0) {
+                statsCard.style.display = 'block';
+            }
+
+            // Efeito de pulse quando atualizar
+            totalCount.classList.add('pulse');
+            setTimeout(() => totalCount.classList.remove('pulse'), 1000);
+        }
+
+        function renderizarTabela(dados) {
+            const tbody = tabela.querySelector("tbody");
+            tbody.innerHTML = "";
+            dadosFiltradosAtuais = dados;
+
+            if (dados.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="sem-dados">Nenhum dado encontrado</td></tr>`;
+                atualizarEstatisticas();
+                return;
+            }
+
+            dados.forEach(item => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                <td>${item.id}</td>
+                <td>${item.nome}</td>
+                <td>${item.numero}</td>
+                <td>${item.email}</td>
+                <td>${item.cpf}</td>
+                <td>${formatarDataHora(item.timestamp)}</td>
+            `;
+                tbody.appendChild(row);
+            });
+
+            atualizarEstatisticas();
+        }
+
+        function aplicarFiltros() {
+            let dadosFiltrados = dadosOriginais.slice();
+
+            // Filtro por Nome
+            const filtroNomeValor = filtroInput.value.toLowerCase();
+            if (filtroNomeValor) {
+                dadosFiltrados = dadosFiltrados.filter(item =>
+                    item.nome.toLowerCase().includes(filtroNomeValor)
+                );
+            }
+
+            // Filtro por Email
+            const filtroEmailValor = filtroEmail.value.toLowerCase();
+            if (filtroEmailValor) {
+                dadosFiltrados = dadosFiltrados.filter(item =>
+                    item.email.toLowerCase().includes(filtroEmailValor)
+                );
+            }
+
+            // Filtro por CPF
+            const filtroCpfValor = filtroCpf.value.replace(/\D/g, "");
+            if (filtroCpfValor) {
+                dadosFiltrados = dadosFiltrados.filter(item => {
+                    if (!item.cpf) return false;
+                    const itemCpf = item.cpf.toString().replace(/\D/g, "");
+                    return itemCpf.includes(filtroCpfValor);
+                });
+            }
+
+            // Filtro por Número
+            const filtroNumeroValor = filtroNumero.value;
+            if (filtroNumeroValor) {
+                dadosFiltrados = dadosFiltrados.filter(item =>
+                    item.numero.toString().includes(filtroNumeroValor)
+                );
+            }
+
+            // Filtro por ID
+            const filtroIdValor = filtroId.value;
+            if (filtroIdValor) {
+                dadosFiltrados = dadosFiltrados.filter(item =>
+                    item.id.toString().includes(filtroIdValor)
+                );
+            }
+
+            // Ordenação
+            const ordem = ordenarSelect.value;
+            if (ordem === "mais-recentes") {
+                dadosFiltrados.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            } else if (ordem === "mais-antigos") {
+                dadosFiltrados.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            } else if (ordem === "a-z") {
+                dadosFiltrados.sort((a, b) => a.nome.localeCompare(b.nome));
+            } else if (ordem === "z-a") {
+                dadosFiltrados.sort((a, b) => b.nome.localeCompare(a.nome));
+            }
+
+            renderizarTabela(dadosFiltrados);
+        }
+
+        // Adicionar event listeners para todos os filtros
+        filtroInput.addEventListener("input", aplicarFiltros);
+        filtroEmail.addEventListener("input", aplicarFiltros);
+        filtroCpf.addEventListener("input", aplicarFiltros);
+        filtroNumero.addEventListener("input", aplicarFiltros);
+        filtroId.addEventListener("input", aplicarFiltros);
+        ordenarSelect.addEventListener("change", aplicarFiltros);
+
+        // Função para buscar dados
+        function buscarDados() {
+            const loading = document.getElementById("loading");
+            const error = document.getElementById("error");
+
+            loading.style.display = "block";
+            error.style.display = "none";
+
+            fetch("http://127.0.0.1:5000/api/dados")
+                .then(response => {
+                    if (!response.ok) throw new Error("Erro ao buscar dados");
+                    return response.json();
+                })
+                .then(dados => {
+                    dadosOriginais = dados;
+                    aplicarFiltros();
+                    console.log("✅ Dados atualizados:", new Date().toLocaleTimeString());
+                })
+                .catch(err => {
+                    error.textContent = "Erro: " + err.message;
+                    error.style.display = "block";
+                    console.error("Erro ao buscar dados:", err);
+                })
+                .finally(() => {
+                    loading.style.display = "none";
+                });
+        }
+
+        // Máscara para o campo CPF
+        const cpfInput = document.getElementById("filtro-cpf");
+        cpfInput.addEventListener("input", function (e) {
+            let value = cpfInput.value;
+            value = value.replace(/\D/g, "");
+
+            if (value.length > 3) value = value.replace(/(\d{3})(\d)/, "$1.$2");
+            if (value.length > 6) value = value.replace(/(\d{3})\.(\d{3})(\d)/, "$1.$2.$3");
+            if (value.length > 9) value = value.replace(/(\d{3})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3-$4");
+
+            cpfInput.value = value.slice(0, 14);
+        });
+
+        // Inicialização
+        buscarDados(); // Primeira carga
+
+        // Adicionar esta função para buscar dados automaticamente
+        function buscarDadosAutomaticamente() {
+            fetch("http://127.0.0.1:5000/api/dados")
+                .then(response => {
+                    if (!response.ok) throw new Error("Erro ao buscar dados");
+                    return response.json();
+                })
+                .then(dados => {
+                    dadosOriginais = dados;
+                    aplicarFiltros();
+                })
+                .catch(err => {
+                    console.error("Erro ao buscar dados:", err);
+                });
+        }
+
+        // Buscar a cada 30 segundos (30000 ms)
+        setInterval(buscarDadosAutomaticamente, 30000);
+
+        // Atualizar ao focar na janela
+        window.addEventListener('focus', buscarDados);
+    </script>
+</body>
+
+</html>

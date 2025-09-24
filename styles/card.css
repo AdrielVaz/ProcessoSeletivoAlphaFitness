@@ -1,0 +1,62 @@
+
+    /* Estilos para o card de estatísticas */
+    .stats-card {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #ff6b00, #ff8c00);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        font-family: Arial, sans-serif;
+        z-index: 1000;
+        min-width: 200px;
+        transition: all 0.3s ease;
+        border-left: 4px solid #ff4500;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .stats-title {
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .stats-count {
+        font-size: 24px;
+        font-weight: bold;
+        margin: 5px 0;
+    }
+
+    .stats-info {
+        font-size: 12px;
+        opacity: 0.9;
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+    }
+
+    .stats-update {
+        font-size: 10px;
+        opacity: 0.7;
+        margin-top: 5px;
+        text-align: right;
+    }
+
+    .pulse {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
