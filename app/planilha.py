@@ -1,11 +1,18 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_file
 from flask_cors import CORS 
 app = Flask(__name__)
+
 CORS(app)  # Habilita CORS para todas as rotas
 
+# Servir o frontend
 @app.route("/")
-def home():
-    return "<h1>Servidor rodando!</h1><p>Acesse <a href='/api/dados'>/api/dados</a> para ver os dados.</p>"
+def serve_frontend():
+    return send_file('index.html')
+
+# Servir arquivos CSS
+@app.route("/styles/<path:filename>")
+def serve_css(filename):
+    return send_file(f'styles/{filename}')
 
 @app.route("/api/dados") # api para obter os dados (caso real, necessita de autenticação, isso deve ser implementado ass. Adriel)
 def get_dados():
