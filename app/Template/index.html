@@ -11,7 +11,6 @@
 </head>
 
 <body>
-
     <header>
         <div class="logo-container">
             <h2>Sistema Alpha Fitness</h2>
@@ -24,18 +23,24 @@
     </header>
     <div class="tabela-container">
         <h1>Dados do Excel</h1>
+
+        <!-- Controles de paginação -->
+        <div class="paginacao-container">
+            <button id="btnAnterior" onclick="mudarPagina(paginaAtual - 1)">◀ Anterior</button>
+            <span id="infoPagina">Página 1 de 1</span>
+            <button id="btnProximo" onclick="mudarPagina(paginaAtual + 1)">Próximo ▶</button>
+        </div>
+
         <!-- Filtro geral -->
         <div class="filtro-container">
             <div class="filtro-item">
                 <label for="filtro-nome">Filtrar por Nome:</label>
                 <input type="text" id="filtro" placeholder="Digite o nome para filtrar">
             </div>
-
             <div class="filtro-item">
                 <label for="filtro-email">Filtrar por Email:</label>
                 <input type="text" id="filtro-email" placeholder="Digite Email para filtrar">
             </div>
-
             <div class="filtro-item">
                 <label for="cpf">Filtrar por CPF:</label>
                 <input type="text" id="filtro-cpf" placeholder="000.000.000-00" maxlength="14">
@@ -53,17 +58,18 @@
                 <label for="filtro-numero">Filtrar por Número:</label>
                 <input type="number" id="filtro-numero" placeholder="Digite Número para filtrar">
             </div>
-
             <div class="filtro-item">
                 <label for="filtro-id">Filtrar por ID:</label>
                 <input type="text" id="filtro-id" placeholder="Digite ID para filtrar">
             </div>
         </div>
+
         <div id="loading" style="display: none; text-align: center; margin: 20px 0;">
             <i id="spinner" class="fas fa-spinner fa-spin" style="font-size: 2em; color: #ff6b00;"></i>
             <div style="margin-top: 10px;">Carregando...</div>
         </div>
         <div id="error" style="display: none; color: red;"></div>
+
         <div class="tabela-rolavel">
             <table id="tabela">
                 <thead>
@@ -81,8 +87,8 @@
                 </tbody>
             </table>
         </div>
-
     </div>
+
     <!-- Card de Estatísticas -->
     <div id="statsCard" class="stats-card" style="display: none;">
         <div class="stats-title">
@@ -92,12 +98,12 @@
         <div class="stats-count" id="totalCount">0</div>
         <div class="stats-info">
             <span>Filtrados: <span id="filteredCount">0</span></span>
-
         </div>
         <div class="stats-update" id="lastUpdate">
             Atualizado: <span id="updateTime">--:--:--</span>
         </div>
     </div>
+
     <!-- Botão de estatísticas (mobile) -->
     <div id="statsToggle" class="stats-toggle">
         <i class="fas fa-chart-bar"></i>
@@ -112,38 +118,48 @@
         const filtroId = document.getElementById("filtro-id");
         const ordenarSelect = document.getElementById("ordenar");
 
+        // Elementos de paginação
+        const btnAnterior = document.getElementById("btnAnterior");
+        const btnProximo = document.getElementById("btnProximo");
+        const infoPagina = document.getElementById("infoPagina");
+
         // Elementos do card de estatísticas
         const statsCard = document.getElementById("statsCard");
         const totalCount = document.getElementById("totalCount");
         const filteredCount = document.getElementById("filteredCount");
-        const visibleCount = document.getElementById("visibleCount");
         const updateTime = document.getElementById("updateTime");
 
+        // Variáveis globais
         let dadosOriginais = [];
         let dadosFiltradosAtuais = [];
+        let paginaAtual = 1;
+        let totalPaginas = 1;
+        let totalRegistros = 0;
 
         function formatarDataHora(data) {
             return new Date(data).toLocaleString('pt-BR');
         }
 
         function atualizarEstatisticas() {
-            const total = dadosOriginais.length;
+            const total = totalRegistros;
             const filtrados = dadosFiltradosAtuais.length;
-
 
             totalCount.textContent = total;
             filteredCount.textContent = filtrados;
-
             updateTime.textContent = new Date().toLocaleTimeString('pt-BR');
 
-            // Mostrar o card quando tiver dados
             if (total > 0) {
                 statsCard.style.display = 'block';
             }
 
-            // Efeito de pulse quando atualizar
             totalCount.classList.add('pulse');
             setTimeout(() => totalCount.classList.remove('pulse'), 1000);
+        }
+
+        function atualizarPaginacao() {
+            infoPagina.textContent = `Página ${paginaAtual} de ${totalPaginas}`;
+            btnAnterior.disabled = paginaAtual <= 1;
+            btnProximo.disabled = paginaAtual >= totalPaginas;
         }
 
         function renderizarTabela(dados) {
@@ -160,104 +176,60 @@
             dados.forEach(item => {
                 const row = document.createElement("tr");
                 row.innerHTML = `
-                <td>${item.id}</td>
-                <td>${item.nome}</td>
-                <td>${item.numero}</td>
-                <td>${item.email}</td>
-                <td>${item.cpf}</td>
-                <td>${formatarDataHora(item.timestamp)}</td>
-            `;
+                    <td>${item.id}</td>
+                    <td>${item.nome}</td>
+                    <td>${item.numero}</td>
+                    <td>${item.email}</td>
+                    <td>${item.cpf}</td>
+                    <td>${formatarDataHora(item.timestamp)}</td>
+                `;
                 tbody.appendChild(row);
             });
 
             atualizarEstatisticas();
         }
 
+
+
+
         function aplicarFiltros() {
-            let dadosFiltrados = dadosOriginais.slice();
-
-            // Filtro por Nome
-            const filtroNomeValor = filtroInput.value.toLowerCase();
-            if (filtroNomeValor) {
-                dadosFiltrados = dadosFiltrados.filter(item =>
-                    item.nome.toLowerCase().includes(filtroNomeValor)
-                );
-            }
-
-            // Filtro por Email
-            const filtroEmailValor = filtroEmail.value.toLowerCase();
-            if (filtroEmailValor) {
-                dadosFiltrados = dadosFiltrados.filter(item =>
-                    item.email.toLowerCase().includes(filtroEmailValor)
-                );
-            }
-
-            // Filtro por CPF
-            const filtroCpfValor = filtroCpf.value.replace(/\D/g, "");
-            if (filtroCpfValor) {
-                dadosFiltrados = dadosFiltrados.filter(item => {
-                    if (!item.cpf) return false;
-                    const itemCpf = item.cpf.toString().replace(/\D/g, "");
-                    return itemCpf.includes(filtroCpfValor);
-                });
-            }
-
-            // Filtro por Número
-            const filtroNumeroValor = filtroNumero.value;
-            if (filtroNumeroValor) {
-                dadosFiltrados = dadosFiltrados.filter(item =>
-                    item.numero.toString().includes(filtroNumeroValor)
-                );
-            }
-
-            // Filtro por ID
-            const filtroIdValor = filtroId.value;
-            if (filtroIdValor) {
-                dadosFiltrados = dadosFiltrados.filter(item =>
-                    item.id.toString().includes(filtroIdValor)
-                );
-            }
-
-            // Ordenação
-            const ordem = ordenarSelect.value;
-            if (ordem === "mais-recentes") {
-                dadosFiltrados.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            } else if (ordem === "mais-antigos") {
-                dadosFiltrados.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-            } else if (ordem === "a-z") {
-                dadosFiltrados.sort((a, b) => a.nome.localeCompare(b.nome));
-            } else if (ordem === "z-a") {
-                dadosFiltrados.sort((a, b) => b.nome.localeCompare(a.nome));
-            }
-
-            renderizarTabela(dadosFiltrados);
+            paginaAtual = 1; // Sempre volta para página 1 ao filtrar/ordenar
+            buscarDadosComFiltros();
         }
 
-        // Adicionar event listeners para todos os filtros
-        filtroInput.addEventListener("input", aplicarFiltros);
-        filtroEmail.addEventListener("input", aplicarFiltros);
-        filtroCpf.addEventListener("input", aplicarFiltros);
-        filtroNumero.addEventListener("input", aplicarFiltros);
-        filtroId.addEventListener("input", aplicarFiltros);
-        ordenarSelect.addEventListener("change", aplicarFiltros);
-
-        // Função para buscar dados
-        function buscarDados() {
+        function buscarDadosComFiltros(page = 1) {
             const loading = document.getElementById("loading");
             const error = document.getElementById("error");
 
             loading.style.display = "block";
             error.style.display = "none";
 
-            fetch("/api/dados")
+            const params = new URLSearchParams({
+                page: page,
+                per_page: 100,
+                filtro_nome: filtroInput.value,
+                filtro_email: filtroEmail.value,
+                filtro_cpf: filtroCpf.value.replace(/\D/g, ""),
+                filtro_numero: filtroNumero.value,
+                filtro_id: filtroId.value,
+                ordenar: ordenarSelect.value
+            });
+
+            fetch(`/api/dados?${params}`)
                 .then(response => {
                     if (!response.ok) throw new Error("Erro ao buscar dados");
                     return response.json();
                 })
-                .then(dados => {
-                    dadosOriginais = dados;
-                    aplicarFiltros();
-                    console.log("✅ Dados atualizados:", new Date().toLocaleTimeString());
+                .then(response => {
+                    dadosOriginais = response.data;
+                    totalRegistros = response.pagination.total;
+                    totalFiltrados = response.pagination.total_filtrados;
+                    totalPaginas = response.pagination.total_pages;
+                    paginaAtual = response.pagination.page;
+
+                    renderizarTabela(dadosOriginais);
+                    atualizarPaginacao();
+                    console.log(`✅ Página ${paginaAtual}/${totalPaginas} | Filtrados: ${totalFiltrados}/${totalRegistros} | Ordenação: ${ordenarSelect.value}`);
                 })
                 .catch(err => {
                     error.textContent = "Erro: " + err.message;
@@ -269,6 +241,48 @@
                 });
         }
 
+        function mudarPagina(novaPagina) {
+            if (novaPagina < 1 || novaPagina > totalPaginas) return;
+            buscarDadosComFiltros(novaPagina); // Mantém filtros e ordenação
+        }
+
+        // event listeners:
+        filtroInput.addEventListener("input", debounce(aplicarFiltros, 300));
+        filtroEmail.addEventListener("input", debounce(aplicarFiltros, 300));
+        filtroCpf.addEventListener("input", debounce(aplicarFiltros, 300));
+        filtroNumero.addEventListener("input", debounce(aplicarFiltros, 300));
+        filtroId.addEventListener("input", debounce(aplicarFiltros, 300));
+        ordenarSelect.addEventListener("change", aplicarFiltros);
+
+        // Inicialização 
+        buscarDadosComFiltros(1);
+
+        // Atualizar ao focar na janela
+        window.addEventListener('focus', () => {
+            buscarDadosComFiltros(paginaAtual);
+        });
+
+        // Função debounce 
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        const statsToggle = document.getElementById("statsToggle");
+        statsToggle.addEventListener("click", () => {
+            if (statsCard.style.display === "none" || statsCard.style.display === "") {
+                statsCard.style.display = "block";
+            } else {
+                statsCard.style.display = "none";
+            }
+        });
         // Máscara para o campo CPF
         const cpfInput = document.getElementById("filtro-cpf");
         cpfInput.addEventListener("input", function (e) {
@@ -282,41 +296,11 @@
             cpfInput.value = value.slice(0, 14);
         });
 
-        // Inicialização
-        buscarDados(); // Primeira carga
+        // Atualizar ao focar na janela - MANTER FILTROS ATUAIS
+        window.addEventListener('focus', () => {
+            buscarDadosComFiltros(paginaAtual);
+        });
 
-        // Adicionar esta função para buscar dados automaticamente
-        function buscarDadosAutomaticamente() {
-            fetch("http://127.0.0.1:5000/api/dados")
-                .then(response => {
-                    if (!response.ok) throw new Error("Erro ao buscar dados");
-                    return response.json();
-                })
-                .then(dados => {
-                    dadosOriginais = dados;
-                    aplicarFiltros();
-                })
-                .catch(err => {
-                    console.error("Erro ao buscar dados:", err);
-                });
-        }
-
-        // Buscar a cada 30 segundos (30000 ms)
-        setInterval(buscarDadosAutomaticamente, 30000);
-
-        // Atualizar ao focar na janela
-        window.addEventListener('focus', buscarDados);
-
-        const statsToggle = document.getElementById("statsToggle");
-
-
-statsToggle.addEventListener("click", () => {
-    if (statsCard.style.display === "none" || statsCard.style.display === "") {
-        statsCard.style.display = "block";
-    } else {
-        statsCard.style.display = "none";
-    }
-});
 
     </script>
 </body>
