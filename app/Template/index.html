@@ -98,6 +98,11 @@
             Atualizado: <span id="updateTime">--:--:--</span>
         </div>
     </div>
+    <!-- Botão de estatísticas (mobile) -->
+    <div id="statsToggle" class="stats-toggle">
+        <i class="fas fa-chart-bar"></i>
+    </div>
+
     <script>
         const tabela = document.getElementById("tabela");
         const filtroInput = document.getElementById("filtro");
@@ -301,6 +306,18 @@
 
         // Atualizar ao focar na janela
         window.addEventListener('focus', buscarDados);
+
+        const statsToggle = document.getElementById("statsToggle");
+
+
+statsToggle.addEventListener("click", () => {
+    if (statsCard.style.display === "none" || statsCard.style.display === "") {
+        statsCard.style.display = "block";
+    } else {
+        statsCard.style.display = "none";
+    }
+});
+
     </script>
 </body>
 

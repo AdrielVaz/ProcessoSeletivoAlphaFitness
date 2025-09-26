@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, send_file
 from flask_cors import CORS 
+import pandas as pd
 app = Flask(__name__)
 
 CORS(app)  # Habilita CORS para todas as rotas
@@ -16,7 +17,7 @@ def serve_css(filename):
 
 @app.route("/api/dados") # api para obter os dados (caso real, necessita de autenticação, isso deve ser implementado ass. Adriel)
 def get_dados():
-    import pandas as pd
+ 
     url = "https://docs.google.com/spreadsheets/d/1OO7gDKXv4YJiDfpfrIHaXIa_XUgDhl3rG2FQImQ-ixY/export?format=xlsx" 
     df = pd.read_excel(url)
     return jsonify(df.to_dict(orient="records"))
